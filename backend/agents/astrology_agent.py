@@ -1,7 +1,8 @@
+from backend.agents.base import BaseAgent
 from backend.agents.schemas import AgentOpinion, UserContext
 
 
-class AstrologyAgent:
+class AstrologyAgent(BaseAgent):
     def run(self, context: UserContext) -> AgentOpinion:
         return AgentOpinion(
             agent_name="astrology",
