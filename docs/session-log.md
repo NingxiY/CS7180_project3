@@ -1,37 +1,54 @@
 # Annotated Claude Code Session Log
 
-## Session 1: Environment Setup and Repository Initialization
+## Session 1: Environment Setup and Claude Code Initialization
 
 ### Goal
-Set up Claude Code in the project repository and generate an initial `CLAUDE.md` file for the CS7180 P3 project.
+
+Set up Claude Code in the project repository and generate an initial CLAUDE.md for the CS7180 P3 project.
 
 ### Interaction Summary
-- Attempted to run `claude` in PowerShell
-- Encountered command recognition error
-- Diagnosed PATH / installation issue
-- Successfully launched Claude Code after fixing the environment
-- Ran `/init` to generate `CLAUDE.md`
-- Iteratively revised `CLAUDE.md` to better match the actual project stage
-- Pushed the initial repository state to GitHub
 
-### Key Claude Code Workflow Evidence
-- Used Claude Code for project initialization rather than manual document writing
-- Iterated on generated output instead of accepting the first draft
-- Adjusted documentation to reflect early-stage repository reality
-- Preserved a concrete target architecture while avoiding false claims about implementation status
+* Attempted to run `claude` in PowerShell but encountered a command recognition error
+* Diagnosed the issue as a PATH / installation problem
+* Reinstalled Claude Code and configured environment variables
+* Successfully launched Claude Code
+* Selected interface settings and entered the interactive CLI
+* Ran `/init` to generate an initial CLAUDE.md
 
 ### Annotation
-This session demonstrated the Explore → Plan → Implement workflow in a lightweight setup context.
 
-- **Explore:** We first identified the environment problem preventing Claude Code from running.
-- **Plan:** After confirming the installation issue, we decided to fix the CLI setup before touching project files.
-- **Implement:** We launched Claude Code, ran `/init`, and generated the initial `CLAUDE.md`.
-- **Refine:** The first version of `CLAUDE.md` was too implementation-assumptive, so we revised it to distinguish between current status and planned architecture.
+This session focused on establishing the development environment before any implementation work.
 
-This was an important early correction because it made the repository documentation more truthful and better aligned with the actual development stage.
+* **Explore:** Identified that Claude Code was not recognized as a command and investigated the root cause
+* **Plan:** Decided to fix the CLI setup before proceeding with project initialization
+* **Implement:** Installed dependencies and configured PATH correctly
+* **Outcome:** Claude Code became usable within the project repository
 
-### Outcome
-- Claude Code was successfully configured
-- Initial `CLAUDE.md` was added to the repository
-- Project conventions, architecture direction, and testing expectations were documented
-- The repository now has a usable starting point for future TDD-oriented development
+This step was critical because all subsequent development depends on Claude Code functioning correctly.
+
+---
+
+## Session 2: CLAUDE.md Generation and Iteration
+
+### Goal
+
+Generate and refine a CLAUDE.md file that defines project conventions, architecture, and workflow.
+
+### Interaction Summary
+
+* Used `/init` to generate an initial CLAUDE.md
+* Observed that the initial output assumed a fully implemented system
+* Prompted Claude to revise the document to reflect an early-stage project
+* Added a "Current Project Status" section
+* Adjusted wording to distinguish between planned architecture and existing implementation
+* Committed and pushed the updated CLAUDE.md
+
+### Annotation
+
+This session demonstrated iterative refinement of AI-generated output.
+
+* The initial CLAUDE.md contained overly confident assumptions about implemented components
+* Instead of accepting it, we critically evaluated the content and revised it
+* We preserved architectural clarity while ensuring factual correctness
+
+This highlights an important workflow principle: **AI-generated ar**

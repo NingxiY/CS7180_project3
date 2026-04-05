@@ -14,17 +14,21 @@ A multi-agent system where specialized AI agents each contribute a distinct anal
 
 ## Current Project Status
 
-The repository is in early setup. Only scaffolding and documentation exist at this point. Components will be implemented incrementally in this order:
+Implementation order — check off before assuming something exists:
 
-1. Backend project skeleton (FastAPI app, settings, base agent interface)
-2. First agent implementation (`astrology_agent`) as the reference pattern
-3. Orchestrator and remaining agents
-4. LLM-as-judge layer
-5. PostgreSQL models and persistence
-6. Frontend (React + TypeScript)
-7. CI/CD pipeline and monitoring integration
+- [x] Base agent interface (`backend/agents/base.py` — `BaseAgent` ABC)
+- [x] Core schemas (`backend/agents/schemas.py` — `UserContext`, `AgentOpinion`)
+- [x] First agent (`backend/agents/astrology_agent.py` — stub, no real LLM call yet)
+- [x] Agent unit tests (`backend/tests/agents/test_astrology_agent.py`)
+- [ ] Settings / env loading (`pydantic-settings`)
+- [ ] FastAPI app skeleton
+- [ ] Orchestrator and remaining agents (`behavioral_agent`, `history_agent`)
+- [ ] LLM-as-judge layer
+- [ ] PostgreSQL models and persistence
+- [ ] Frontend (React + TypeScript)
+- [ ] CI/CD pipeline and monitoring integration
 
-When working in this repo, check which components exist before assuming they are implemented. If a module referenced in this file does not exist yet, create it following the conventions described below.
+When a module referenced in this file does not exist yet, create it following the conventions below.
 
 ---
 
@@ -78,7 +82,7 @@ These are firm design decisions. Follow them when implementing any new component
 - **The orchestrator owns the conversation graph.** It decides which agents to invoke, merges outputs, and passes them to the judge. Agents never call each other.
 - **LLM-as-judge is a required step, not optional.** The judge scores each `AgentOpinion` on relevance, safety, and coherence before the final response is assembled. Never bypass it in production flows.
 - **Frontend talks only to the FastAPI backend.** No direct LLM calls from the browser. API keys never leave the backend.
-- **Async throughout the backend.** All FastAPI route handlers and agent calls must be `async def`. Use `httpx.AsyncClient` for any outbound HTTP.
+- **Async throughout the backend.** All FastAPI route handlers and agent calls must be `async def`. Use `httpx.AsyncClient` for any outbound HTTP. Note: `BaseAgent.run()` is currently synchronous — when real LLM calls are added, migrate it to `async def run(...)` and update all implementations.
 
 ---
 
