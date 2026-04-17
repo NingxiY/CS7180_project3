@@ -9,7 +9,7 @@ This test will fail until the following are implemented:
 import pytest
 
 from backend.agents.astrology_agent import AstrologyAgent
-from backend.agents.schemas import AgentOpinion, UserContext
+from backend.agents.schemas import AgentOpinion, Preferences, UserContext
 
 
 @pytest.fixture()
@@ -17,29 +17,26 @@ def sample_user_context() -> UserContext:
     return UserContext(
         user_id="user-001",
         birth_date="1995-06-15",
-        preferences={"looking_for": "long-term", "interests": ["hiking", "reading"]},
+        preferences=Preferences(looking_for="long-term", interests=["hiking", "reading"]),
     )
 
 
 class TestAstrologyAgent:
-    def test_returns_agent_opinion(self, sample_user_context: UserContext) -> None:
-        """AstrologyAgent.run() must return an AgentOpinion instance."""
+    @pytest.mark.asyncio
+    async def test_returns_agent_opinion(self, sample_user_context: UserContext) -> None:
         agent = AstrologyAgent()
-        result = agent.run(sample_user_context)
-
+        result = await agent.run(sample_user_context)
         assert isinstance(result, AgentOpinion)
 
-    def test_agent_name_is_astrology(self, sample_user_context: UserContext) -> None:
-        """agent_name must identify this agent unambiguously."""
+    @pytest.mark.asyncio
+    async def test_agent_name_is_astrology(self, sample_user_context: UserContext) -> None:
         agent = AstrologyAgent()
-        result = agent.run(sample_user_context)
-
+        result = await agent.run(sample_user_context)
         assert result.agent_name == "astrology"
 
-    def test_advice_is_non_empty_string(self, sample_user_context: UserContext) -> None:
-        """advice must be a non-empty string — not None, not whitespace."""
+    @pytest.mark.asyncio
+    async def test_advice_is_non_empty_string(self, sample_user_context: UserContext) -> None:
         agent = AstrologyAgent()
-        result = agent.run(sample_user_context)
-
+        result = await agent.run(sample_user_context)
         assert isinstance(result.advice, str)
         assert result.advice.strip() != ""
