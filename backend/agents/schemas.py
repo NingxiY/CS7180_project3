@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from typing import Dict, Literal
+
+from pydantic import BaseModel, Field
 
 
 class Preferences(BaseModel):
@@ -16,6 +18,7 @@ class UserContext(BaseModel):
 class AgentOpinion(BaseModel):
     agent_name: str
     advice: str
+    source: Literal["stub", "llm"] = "stub"
 
 
 class JudgeScore(BaseModel):
@@ -29,3 +32,5 @@ class JudgeOutput(BaseModel):
     final_advice: str
     scores: list[JudgeScore]
     rationale: str
+    agent_sources: Dict[str, Literal["stub", "llm"]] = Field(default_factory=dict)
+    opinions: list[AgentOpinion] = Field(default_factory=list)

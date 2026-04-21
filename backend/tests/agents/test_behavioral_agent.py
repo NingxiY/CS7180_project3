@@ -1,58 +1,63 @@
 import pytest
 
-from backend.agents.astrology_agent import AstrologyAgent, _STUB_ADVICE
+from backend.agents.behavioral_agent import BehavioralAgent, _STUB_ADVICE
 from backend.agents.schemas import AgentOpinion, Preferences, UserContext
 
 
 @pytest.fixture()
 def sample_user_context() -> UserContext:
     return UserContext(
-        user_id="user-001",
-        birth_date="1995-06-15",
-        preferences=Preferences(looking_for="long-term", interests=["hiking", "reading"]),
+        user_id="user-002",
+        birth_date="1990-03-22",
+        preferences=Preferences(
+            looking_for="casual",
+            interests=["travel", "cooking"],
+            dealbreakers=["smoking"],
+        ),
     )
 
 
-class TestAstrologyAgent:
+class TestBehavioralAgent:
     @pytest.mark.asyncio
     async def test_returns_agent_opinion(self, sample_user_context: UserContext) -> None:
-        agent = AstrologyAgent()
+        agent = BehavioralAgent()
         result = await agent.run(sample_user_context)
         assert isinstance(result, AgentOpinion)
 
     @pytest.mark.asyncio
-    async def test_agent_name_is_astrology(self, sample_user_context: UserContext) -> None:
-        agent = AstrologyAgent()
+    async def test_agent_name_is_behavioral(self, sample_user_context: UserContext) -> None:
+        agent = BehavioralAgent()
         result = await agent.run(sample_user_context)
-        assert result.agent_name == "astrology"
+        assert result.agent_name == "behavioral"
 
     @pytest.mark.asyncio
     async def test_advice_is_non_empty_string(self, sample_user_context: UserContext) -> None:
-        agent = AstrologyAgent()
+        agent = BehavioralAgent()
         result = await agent.run(sample_user_context)
-        assert isinstance(result.advice, str)
-        assert result.advice.strip() != ""
+        assert isinstance(result.advice, str) and result.advice.strip()
 
     @pytest.mark.asyncio
     async def test_returns_stub_when_no_api_key(
         self, sample_user_context: UserContext, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        import backend.agents.astrology_agent as mod
+        import backend.agents.behavioral_agent as mod
         monkeypatch.setattr(mod.settings, "anthropic_api_key", None)
-        result = await AstrologyAgent().run(sample_user_context)
+        result = await BehavioralAgent().run(sample_user_context)
         assert result.advice == _STUB_ADVICE
+        assert result.source == "stub"
 
     @pytest.mark.asyncio
     async def test_falls_back_to_stub_on_llm_error(
         self, sample_user_context: UserContext, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        import backend.agents.astrology_agent as mod
+        import backend.agents.behavioral_agent as mod
         monkeypatch.setattr(mod.settings, "anthropic_api_key", "sk-ant-fake")
 
         async def _failing(_: UserContext) -> str:
             raise RuntimeError("API error")
 
-        agent = AstrologyAgent()
+        agent = BehavioralAgent()
         monkeypatch.setattr(agent, "_call_llm", _failing)
         result = await agent.run(sample_user_context)
         assert result.advice == _STUB_ADVICE
+        assert result.source == "stub"

@@ -11,27 +11,79 @@
     <header>
       <h1>AI Multi-Agent Dating Assistant</h1>
       <p class="subtitle">
-        Describe your situation and receive advice synthesized from multiple AI perspectives.
+        Share your preferences and receive advice synthesized from multiple AI perspectives.
       </p>
     </header>
 
     <main>
       <form id="advice-form">
-        <label for="context">Your situation</label>
-        <textarea
-          id="context"
-          name="context"
-          rows="6"
-          placeholder="e.g. I've been talking to someone for two weeks. We have a lot in common but I'm not sure if they're interested romantically. My birthday is June 15, 1995..."
-          required
-        ></textarea>
+        <div class="field">
+          <label for="birth-date">Birth date</label>
+          <input type="date" id="birth-date" name="birth_date" required />
+        </div>
+
+        <div class="field">
+          <label for="looking-for">Looking for</label>
+          <select id="looking-for" name="looking_for" required>
+            <option value="" disabled selected>Select one…</option>
+            <option value="long-term">Long-term relationship</option>
+            <option value="casual">Casual dating</option>
+            <option value="friendship">Friendship</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="interests">Interests <span class="hint">(comma-separated)</span></label>
+          <input
+            type="text"
+            id="interests"
+            name="interests"
+            placeholder="e.g. hiking, reading, travel"
+          />
+        </div>
+
+        <div class="field">
+          <label for="dealbreakers">Dealbreakers <span class="hint">(comma-separated)</span></label>
+          <input
+            type="text"
+            id="dealbreakers"
+            name="dealbreakers"
+            placeholder="e.g. smoking, dishonesty"
+          />
+        </div>
 
         <button type="submit" id="submit-btn">Get Advice</button>
       </form>
 
+      <section id="error-section" class="error-section" hidden>
+        <p id="error-message"></p>
+      </section>
+
       <section id="result" class="result" hidden>
-        <h2>Advice</h2>
-        <div id="result-content"></div>
+        <div class="result-block">
+          <h2>Advice</h2>
+          <p id="final-advice"></p>
+        </div>
+
+        <div class="result-block">
+          <h2>Rationale</h2>
+          <p id="rationale"></p>
+        </div>
+
+        <div class="result-block">
+          <h2>Agent Opinions</h2>
+          <div id="opinions"></div>
+        </div>
+
+        <div class="result-block">
+          <h2>Scores</h2>
+          <div id="scores"></div>
+        </div>
+
+        <div class="result-block">
+          <h2>Sources</h2>
+          <div id="agent-sources"></div>
+        </div>
       </section>
     </main>
   </div>

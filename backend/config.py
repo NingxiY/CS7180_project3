@@ -4,8 +4,8 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    openai_api_key: Optional[str] = None
-    openai_model: str = "gpt-4o-mini"
+    anthropic_api_key: Optional[str] = None
+    anthropic_model: str = "claude-haiku-4-5-20251001"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

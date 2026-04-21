@@ -1,10 +1,19 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from backend.agents.schemas import JudgeOutput, Preferences, UserContext
 from backend.orchestrator.orchestrator import Orchestrator
 
 app = FastAPI(title="Dating Advice API", version="0.1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["POST", "GET"],
+    allow_headers=["Content-Type"],
+)
+
 _orchestrator = Orchestrator()
 
 

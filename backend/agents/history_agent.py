@@ -1,10 +1,42 @@
+from typing import Optional
+
+from anthropic import AsyncAnthropic
+
+from backend.agents.history.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 from backend.agents.base import BaseAgent
 from backend.agents.schemas import AgentOpinion, UserContext
+from backend.config import settings
+
+_STUB_ADVICE = (
+    "Based on your stated preferences and dealbreakers, you tend to value stability. "
+    "Consider partners who demonstrate consistency early on."
+)
 
 
 class HistoryAgent(BaseAgent):
+    def __init__(self, client: Optional[AsyncAnthropic] = None) -> None:
+        self._client = client
+
     async def run(self, context: UserContext) -> AgentOpinion:
-        return AgentOpinion(
-            agent_name="history",
-            advice="Based on your stated preferences and dealbreakers, you tend to value stability. Consider partners who demonstrate consistency early on.",
+        if settings.anthropic_api_key:
+            try:
+                advice = await self._call_llm(context)
+                return AgentOpinion(agent_name="history", advice=advice, source="llm")
+            except Exception as exc:
+                print(f"[HistoryAgent] LLM call failed ({exc!r}), using stub advice.")
+        return AgentOpinion(agent_name="history", advice=_STUB_ADVICE, source="stub")
+
+    async def _call_llm(self, context: UserContext) -> str:
+        client = self._client or AsyncAnthropic(api_key=settings.anthropic_api_key)
+        user_prompt = USER_PROMPT_TEMPLATE.format(
+            looking_for=context.preferences.looking_for,
+            interests=", ".join(context.preferences.interests) or "none",
+            dealbreakers=", ".join(context.preferences.dealbreakers) or "none",
         )
+        response = await client.messages.create(
+            model=settings.anthropic_model,
+            max_tokens=256,
+            system=SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+        return response.content[0].text

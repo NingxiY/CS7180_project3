@@ -61,6 +61,9 @@ def _check_200(body: dict) -> list[tuple[str, bool]]:
     agent_names = {s.get("agent_name") for s in scores}
     score_fields = ["relevance", "safety", "coherence"]
 
+    sources = body.get("agent_sources", None)
+    opinions = body.get("opinions", [])
+
     return [
         ("final_advice is non-empty", bool(body.get("final_advice", "").strip())),
         ("rationale is non-empty", bool(body.get("rationale", "").strip())),
@@ -74,6 +77,11 @@ def _check_200(body: dict) -> list[tuple[str, bool]]:
                 for f in score_fields
             ),
         ),
+        ("agent_sources is a dict", isinstance(sources, dict)),
+        ("agent_sources keys are exactly astrology/behavioral/history", set(sources.keys()) == EXPECTED_AGENTS if isinstance(sources, dict) else False),
+        ("agent_sources values are each stub or llm", all(v in ("stub", "llm") for v in sources.values()) if isinstance(sources, dict) else False),
+        ("opinions has exactly 3 entries", len(opinions) == 3),
+        ("all opinions have non-empty advice", all(bool(op.get("advice", "").strip()) for op in opinions)),
     ]
 
 

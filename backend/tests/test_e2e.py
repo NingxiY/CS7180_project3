@@ -24,6 +24,10 @@ async def test_advice_returns_200_with_valid_payload() -> None:
     assert isinstance(body["final_advice"], str) and body["final_advice"]
     assert len(body["scores"]) == 3
     assert isinstance(body["rationale"], str) and body["rationale"]
+    assert set(body["agent_sources"].keys()) == {"astrology", "behavioral", "history"}
+    assert all(v in ("stub", "llm") for v in body["agent_sources"].values())
+    assert len(body["opinions"]) == 3
+    assert all(op["advice"] for op in body["opinions"])
 
 
 @pytest.mark.asyncio

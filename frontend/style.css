@@ -52,18 +52,35 @@ label {
   font-size: 0.9rem;
 }
 
-textarea {
-  resize: vertical;
+.hint {
+  font-weight: 400;
+  color: #888;
+  font-size: 0.82rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+input[type="date"],
+input[type="text"],
+select {
   border: 1px solid #ccc;
   border-radius: 6px;
-  padding: 0.75rem;
+  padding: 0.6rem 0.75rem;
   font-size: 0.95rem;
   font-family: inherit;
   line-height: 1.5;
   transition: border-color 0.15s;
+  background: #fff;
+  color: #1a1a2e;
 }
 
-textarea:focus {
+input[type="date"]:focus,
+input[type="text"]:focus,
+select:focus {
   outline: none;
   border-color: #7c6af7;
 }
@@ -90,24 +107,120 @@ button[type="submit"]:disabled {
   cursor: not-allowed;
 }
 
+.error-section {
+  margin-top: 1rem;
+  background: #fff3f3;
+  border: 1px solid #f5c2c2;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  color: #c0392b;
+  font-size: 0.9rem;
+}
+
 .result {
   margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.result-block {
   background: #fff;
   border: 1px solid #e0e0e6;
   border-radius: 10px;
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
 }
 
-.result h2 {
-  font-size: 1rem;
+.result-block h2 {
+  font-size: 0.85rem;
   font-weight: 700;
-  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: #7c6af7;
+  margin-bottom: 0.75rem;
 }
 
-#result-content {
+.result-block p {
   font-size: 0.95rem;
   line-height: 1.7;
   color: #333;
-  white-space: pre-wrap;
+}
+
+/* Opinion cards */
+.opinion-card {
+  border: 1px solid #e8e8f0;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.opinion-card:last-child {
+  margin-bottom: 0;
+}
+
+.opinion-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.agent-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.opinion-advice {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #444;
+}
+
+/* Source badges */
+.source-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.source-llm {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.source-stub {
+  background: #f3f3f3;
+  color: #777;
+}
+
+/* Score rows */
+.score-row,
+.source-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid #f0f0f5;
+  font-size: 0.88rem;
+}
+
+.score-row:last-child,
+.source-row:last-child {
+  border-bottom: none;
+}
+
+.score-agent {
+  font-weight: 600;
+  min-width: 90px;
+}
+
+.score-item {
+  color: #555;
+}
+
+.score-item strong {
+  color: #1a1a2e;
 }

@@ -1,7 +1,8 @@
 from typing import Optional
 
-from openai import AsyncOpenAI
+from anthropic import AsyncAnthropic
 
+from backend.agents.astrology.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 from backend.agents.base import BaseAgent
 from backend.agents.schemas import AgentOpinion, UserContext
 from backend.config import settings
@@ -10,33 +11,30 @@ _STUB_ADVICE = "Based on your birth chart, you are most compatible with earth si
 
 
 class AstrologyAgent(BaseAgent):
-    def __init__(self, client: Optional[AsyncOpenAI] = None) -> None:
+    def __init__(self, client: Optional[AsyncAnthropic] = None) -> None:
         self._client = client
 
     async def run(self, context: UserContext) -> AgentOpinion:
-        if settings.openai_api_key:
+        if settings.anthropic_api_key:
             try:
                 advice = await self._call_llm(context)
+                return AgentOpinion(agent_name="astrology", advice=advice, source="llm")
             except Exception as exc:
                 print(f"[AstrologyAgent] LLM call failed ({exc!r}), using stub advice.")
-                advice = _STUB_ADVICE
-        else:
-            advice = _STUB_ADVICE
-        return AgentOpinion(agent_name="astrology", advice=advice)
+        return AgentOpinion(agent_name="astrology", advice=_STUB_ADVICE, source="stub")
 
     async def _call_llm(self, context: UserContext) -> str:
-        client = self._client or AsyncOpenAI(api_key=settings.openai_api_key)
-        prompt = (
-            f"You are an astrology-based dating advisor.\n"
-            f"User birth date: {context.birth_date}\n"
-            f"Looking for: {context.preferences.looking_for}\n"
-            f"Interests: {', '.join(context.preferences.interests) or 'none'}\n"
-            f"Dealbreakers: {', '.join(context.preferences.dealbreakers) or 'none'}\n\n"
-            f"Give 2-3 sentences of astrology-grounded dating advice for this person."
+        client = self._client or AsyncAnthropic(api_key=settings.anthropic_api_key)
+        user_prompt = USER_PROMPT_TEMPLATE.format(
+            birth_date=context.birth_date,
+            looking_for=context.preferences.looking_for,
+            interests=", ".join(context.preferences.interests) or "none",
+            dealbreakers=", ".join(context.preferences.dealbreakers) or "none",
         )
-        response = await client.chat.completions.create(
-            model=settings.openai_model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
+        response = await client.messages.create(
+            model=settings.anthropic_model,
+            max_tokens=256,
+            system=SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": user_prompt}],
         )
-        return response.choices[0].message.content or ""
+        return response.content[0].text

@@ -24,8 +24,12 @@ class JudgeLayer:
             "Final advice synthesizes the leading insight from each perspective."
         )
 
+        agent_sources = {op.agent_name: op.source for op in opinions}
+
         return JudgeOutput(
             final_advice=final_advice,
             scores=scores,
             rationale=rationale,
+            agent_sources=agent_sources,
+            opinions=opinions,
         )
