@@ -34,3 +34,11 @@ class JudgeOutput(BaseModel):
     rationale: str
     agent_sources: Dict[str, Literal["stub", "llm"]] = Field(default_factory=dict)
     opinions: list[AgentOpinion] = Field(default_factory=list)
+
+
+class SimpleAdviceResult(BaseModel):
+    """Flat output for the simple string-in / structured-out orchestrator path."""
+    astrology: str
+    behavioral: str
+    history: str
+    final_advice: str
