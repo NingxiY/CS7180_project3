@@ -24,17 +24,27 @@ class AstrologyAgent(BaseAgent):
         return AgentOpinion(agent_name="astrology", advice=_STUB_ADVICE, source="stub")
 
     async def _call_llm(self, context: UserContext) -> str:
-        client = self._client or AsyncAnthropic(api_key=settings.anthropic_api_key)
         user_prompt = USER_PROMPT_TEMPLATE.format(
             birth_date=context.birth_date,
             looking_for=context.preferences.looking_for,
             interests=", ".join(context.preferences.interests) or "none",
             dealbreakers=", ".join(context.preferences.dealbreakers) or "none",
         )
-        response = await client.messages.create(
-            model=settings.anthropic_model,
-            max_tokens=256,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": user_prompt}],
-        )
-        return response.content[0].text
+        if self._client is not None:
+            # injected client — caller owns its lifecycle
+            response = await self._client.messages.create(
+                model=settings.anthropic_model,
+                max_tokens=256,
+                system=SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": user_prompt}],
+            )
+            return response.content[0].text
+        # close the client (and its httpx transport) before returning
+        async with AsyncAnthropic(api_key=settings.anthropic_api_key) as client:
+            response = await client.messages.create(
+                model=settings.anthropic_model,
+                max_tokens=256,
+                system=SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": user_prompt}],
+            )
+            return response.content[0].text
