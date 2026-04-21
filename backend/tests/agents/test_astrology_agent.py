@@ -1,14 +1,6 @@
-"""
-TDD - Red phase.
-
-This test will fail until the following are implemented:
-  backend/agents/astrology_agent.py  -> AstrologyAgent
-  backend/agents/schemas.py          -> UserContext, AgentOpinion
-"""
-
 import pytest
 
-from backend.agents.astrology_agent import AstrologyAgent
+from backend.agents.astrology_agent import AstrologyAgent, _STUB_ADVICE
 from backend.agents.schemas import AgentOpinion, Preferences, UserContext
 
 
@@ -40,3 +32,27 @@ class TestAstrologyAgent:
         result = await agent.run(sample_user_context)
         assert isinstance(result.advice, str)
         assert result.advice.strip() != ""
+
+    @pytest.mark.asyncio
+    async def test_returns_stub_when_no_api_key(
+        self, sample_user_context: UserContext, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import backend.agents.astrology_agent as mod
+        monkeypatch.setattr(mod.settings, "openai_api_key", None)
+        result = await AstrologyAgent().run(sample_user_context)
+        assert result.advice == _STUB_ADVICE
+
+    @pytest.mark.asyncio
+    async def test_falls_back_to_stub_on_llm_error(
+        self, sample_user_context: UserContext, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import backend.agents.astrology_agent as mod
+        monkeypatch.setattr(mod.settings, "openai_api_key", "sk-fake")
+
+        async def _failing(_: UserContext) -> str:
+            raise RuntimeError("API error")
+
+        agent = AstrologyAgent()
+        monkeypatch.setattr(agent, "_call_llm", _failing)
+        result = await agent.run(sample_user_context)
+        assert result.advice == _STUB_ADVICE
