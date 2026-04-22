@@ -205,6 +205,31 @@ ANTHROPIC_API_KEY=... (optional)
 
 ---
 
+## 🔐 Security Considerations
+
+A lightweight security review was performed using a custom `security-reviewer` agent. The review covered authentication enforcement, API route protection, environment variable handling, database access patterns, and fallback behavior.
+
+**Overall risk level: Medium**
+
+Key findings:
+
+* `auth()` is called correctly on every API route; all SQL queries use parameterized tagged template literals (no injection risk found)
+* Middleware runs in populate-only mode — authentication is not enforced at the edge, only inside route handlers
+* No rate limiting on `POST /api/v1/advice`; each request triggers up to 4 LLM calls, making the endpoint vulnerable to cost amplification
+* `body.user_id` from the request payload is trusted rather than always deriving identity from the verified Clerk session
+* `npm audit` runs in CI but with `continue-on-error: true`, so high-severity findings do not block deploys
+* No `NEXT_PUBLIC_` leakage of server-side secrets detected
+
+Recommended improvements:
+
+* Replace `ctx.user_id = body.user_id` with `ctx.user_id = userId` (from `auth()`)
+* Switch `clerkMiddleware()` to enforce mode for all `/api/` paths
+* Add a per-user rate limit (e.g. 5 req/min) before LLM calls are made
+* Remove `continue-on-error` from the audit step, or split it so `critical` findings fail the build
+* Add server-side input length validation (500 char cap per field) to narrow prompt injection surface
+
+---
+
 ## 📄 License
 
 MIT

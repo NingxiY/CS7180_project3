@@ -285,4 +285,19 @@ Past advice you gave this user:
 3. **Vercel**: Import repo, set root directory to `frontend/`, add all env vars
 4. Local dev: create `frontend/.env.local` with the same variables
 
+---
+
+## Security Review
+
+A security assessment was performed using the custom `.claude/agents/security-reviewer.md` agent.
+
+Areas evaluated:
+- Dependency scanning (`npm audit` in CI)
+- Authentication enforcement (Clerk `auth()`, middleware posture)
+- API route protection (rate limiting, input validation, identity trust boundary)
+- OWASP Top 10 awareness (A07 Broken Auth, A02 Data Exposure, A03 Injection, A05 Misconfiguration)
+- Security definition of done (acceptance criteria checklist)
+
+Overall risk level: **Medium**. See README for full summary.
+
 <!-- Last updated: 2026-04-21 -->
