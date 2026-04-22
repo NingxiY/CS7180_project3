@@ -138,7 +138,7 @@ ruff check .
 - Integration-test the orchestrator end-to-end with a real (test-tier) LLM call, guarded by `@pytest.mark.integration`.
 - Judge evaluation tests must assert on structured output fields (`score`, `rationale`), not raw LLM strings.
 
-### Frontend
+### Frontend (Next.js — actual current state)
 
 ```bash
 cd frontend
@@ -147,18 +147,31 @@ npm install
 # Run dev server
 npm run dev
 
-# Run all tests
+# Unit + integration tests (Vitest, no secrets needed)
 npm test
 
-# Run a single test file
-npx vitest run src/features/chat/ChatWindow.test.tsx
+# Watch mode
+npm run test:watch
 
-# Lint + format check
-npm run lint
+# Coverage report (html + terminal)
+npm run test:coverage
+
+# E2E tests (Playwright — starts dev server automatically)
+npm run test:e2e
+
+# E2E with interactive UI
+npm run test:e2e:ui
+
+# One-time Playwright browser install
+npx playwright install --with-deps chromium
 ```
 
-- Test React components with React Testing Library. Assert on user-visible text and behavior, not component internals.
-- Mock the API client module (`vi.mock('@/api/client')`) in all component tests.
+Test files:
+- `tests/unit/memoryUtils.test.js` — pure rolling-memory helper (5 tests)
+- `tests/integration/advice.test.js` — POST /api/v1/advice: auth guard, stub mode, response shape (5 tests)
+- `tests/e2e/homepage.spec.js` — Playwright happy-path: page load, form, advisor cards, 401 flow (5 tests)
+
+Integration tests mock Clerk, Neon, and Anthropic — run with no env vars, always in stub mode.
 
 ---
 
@@ -179,12 +192,97 @@ npm run lint
 
 ---
 
-## CI/CD (Planned)
+## CI/CD
 
-The intended GitHub Actions pipeline on every PR:
-1. `ruff check` + `mypy` (backend)
-2. `pytest` (backend, excluding `@pytest.mark.integration`)
-3. `eslint` + `vitest` (frontend)
-4. Docker build smoke test
+GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push and pull_request.
 
-Integration tests are intended to run nightly on `main` against live LLM endpoints once the pipeline is established.
+Steps (all run with `working-directory: frontend`):
+1. `npm ci` — install from lock file
+2. `npm test` — Vitest unit + integration (no secrets needed)
+3. `npm run test:coverage` — coverage report
+4. `npm run build` — Next.js production build (requires `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` secret)
+5. `npx playwright install --with-deps chromium` — install browser
+6. `npm run test:e2e` — Playwright against production build via `npm start`
+7. `npm audit --audit-level=high` — security audit (`continue-on-error: true`)
+
+GitHub secrets required: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`.
+`ANTHROPIC_API_KEY` and `DATABASE_URL` are intentionally omitted — app runs in stub/no-DB mode in CI.
+
+---
+
+## Architecture Overview
+
+Current actual implementation (Next.js monolith, no separate Python backend in production):
+
+| Component | Technology | Location |
+|---|---|---|
+| Frontend + API | Next.js 14 App Router | `frontend/app/` |
+| Auth | Clerk (`@clerk/nextjs`) | `layout.js`, `middleware.js`, `auth()` in route |
+| LLM agents + judge | Anthropic SDK (`@anthropic-ai/sdk`) | `app/api/v1/advice/route.js` |
+| Database client | Neon serverless (`@neondatabase/serverless`) | `lib/db.js` |
+| Memory helpers | Plain JS | `lib/memory.js`, `lib/memoryUtils.js` |
+
+The Python `backend/` directory remains in the repo as a reference implementation but is not deployed.
+
+---
+
+## Data Flow
+
+```
+User submits situation (page.js)
+→ POST /api/v1/advice
+→ auth() — 401 if not signed in
+→ findOrCreateUser(clerkUserId) → dbUserId   [skipped if DATABASE_URL unset]
+→ getAgentMemories(dbUserId) → { astrology, behavioral, history }
+→ 3 agents run in parallel via Promise.all
+    each agent prompt = "Past advice you gave this user:\n<memory>\n\n" + current input
+    LLM path: Anthropic claude-haiku-4-5-20251001 (if ANTHROPIC_API_KEY set)
+    Stub path: hardcoded advice strings (if no API key)
+→ llmJudge synthesizes → { final_advice, rationale }
+→ saveSession() → advice_sessions + agent_opinions rows
+→ updateAgentMemory() → upsert rolling last-3 per agent
+→ Response: { opinions, final_advice, rationale, scores, agent_sources }
+```
+
+---
+
+## Memory System
+
+Per-user, per-agent memory stored in Neon PostgreSQL.
+
+**Schema:** `agent_memory(user_id, agent_name, memory_summary, last_updated_at)` — `UNIQUE(user_id, agent_name)`
+
+**Rolling window:** `buildRollingMemory(existingMemory, newAdvice)` in `lib/memoryUtils.js` keeps the last 3 advice texts as a newline-separated string. Oldest entry is dropped when the window is full.
+
+**Prompt injection:** Each agent receives memory prepended as:
+```
+Past advice you gave this user:
+<memory_summary>
+
+<current prompt>
+```
+
+**Graceful degradation:** `lib/db.js` exports `null` when `DATABASE_URL` is not set. All DB operations are guarded by `if (sql) { ... }` — the app works fully without a database (no memory, stub or LLM advice still returned).
+
+---
+
+## Deployment
+
+### Environment variables
+
+| Variable | Required | Source |
+|---|---|---|
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Yes | Clerk dashboard → API Keys |
+| `CLERK_SECRET_KEY` | Yes | Clerk dashboard → API Keys |
+| `ANTHROPIC_API_KEY` | No (stubs if absent) | Anthropic console |
+| `DATABASE_URL` | No (no memory if absent) | Neon dashboard → Connection string |
+| `ANTHROPIC_MODEL` | No (defaults to `claude-haiku-4-5-20251001`) | — |
+
+### Steps
+
+1. **Neon**: Create project → open SQL Editor → paste and run `frontend/schema.sql`
+2. **Clerk**: Create application → copy publishable key and secret key
+3. **Vercel**: Import repo, set root directory to `frontend/`, add all env vars
+4. Local dev: create `frontend/.env.local` with the same variables
+
+<!-- Last updated: 2026-04-21 -->
