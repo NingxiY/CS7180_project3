@@ -1,12 +1,12 @@
 import { auth } from '@clerk/nextjs/server'
 import Anthropic from '@anthropic-ai/sdk'
-import sql from '../../../lib/db'
+import sql from '../../../../lib/db'
 import {
   findOrCreateUser,
   getAgentMemories,
   saveSession,
   updateAgentMemory,
-} from '../../../lib/memory'
+} from '../../../../lib/memory'
 
 const MODEL   = process.env.ANTHROPIC_MODEL   || 'claude-haiku-4-5-20251001'
 const API_KEY = process.env.ANTHROPIC_API_KEY || ''
