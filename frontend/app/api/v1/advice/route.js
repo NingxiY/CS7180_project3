@@ -1,3 +1,4 @@
+import { auth } from '@clerk/nextjs/server'
 import Anthropic from '@anthropic-ai/sdk'
 
 const MODEL   = process.env.ANTHROPIC_MODEL   || 'claude-haiku-4-5-20251001'
@@ -92,6 +93,11 @@ async function llmJudge(client, opinions) {
 }
 
 export async function POST(request) {
+  const { userId } = await auth()
+  if (!userId) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   let body
   try {
     body = await request.json()

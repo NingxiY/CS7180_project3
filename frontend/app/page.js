@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { SignInButton, UserButton, useAuth } from '@clerk/nextjs'
 
 const API_URL = '/api/v1/advice'
 
@@ -17,6 +18,7 @@ const ADVISORS = [
 ]
 
 export default function Page() {
+  const { isSignedIn, isLoaded } = useAuth()
   const [situation, setSituation] = useState('')
   const [loading,   setLoading]   = useState(false)
   const [error,     setError]     = useState(null)
@@ -137,6 +139,41 @@ export default function Page() {
       <div className="orbit-ring orbit-ring--1" />
       <div className="orbit-ring orbit-ring--2" />
       <div className="orbit-ring orbit-ring--3" />
+
+      {/* Auth bar — top-right corner */}
+      {isLoaded && (
+        <div style={{
+          position: 'fixed',
+          top: '1rem',
+          right: '1.25rem',
+          zIndex: 10,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+        }}>
+          {isSignedIn ? (
+            <UserButton afterSignOutUrl="/" />
+          ) : (
+            <SignInButton mode="modal">
+              <button style={{
+                fontFamily: "'Cinzel', serif",
+                fontSize: '0.65rem',
+                fontWeight: 500,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                color: '#c8c0e8',
+                background: 'rgba(120,80,255,0.12)',
+                border: '1px solid rgba(170,140,255,0.3)',
+                borderRadius: '8px',
+                padding: '0.45rem 1rem',
+                cursor: 'pointer',
+              }}>
+                Sign In
+              </button>
+            </SignInButton>
+          )}
+        </div>
+      )}
 
       <div className="page">
 
