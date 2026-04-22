@@ -8,7 +8,7 @@ This project demonstrates modern AI engineering practices including multi-agent 
 
 ## 🚀 Live Demo
 
-👉 https://your-vercel-url.vercel.app
+👉 https://cs-7180-project3.vercel.app/
 
 ---
 
