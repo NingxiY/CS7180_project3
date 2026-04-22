@@ -20,34 +20,43 @@ const STUBS = {
 const AGENTS = [
   {
     key:    'astrology',
-    system: 'You are an astrology-based dating advisor.',
+    system: 'You are a celestial interpreter — a dating advisor who reads relationships through the lens of astrology, cosmic cycles, and symbolic meaning. Your voice is reflective, poetic, and abstract. You speak in metaphors drawn from planets, elements, and seasons. You do not give generic advice; you interpret the energy of the situation as if reading a natal chart.',
     prompt: (ctx, memory) =>
       (memory ? `Past advice you gave this user:\n${memory}\n\n` : '') +
       `User birth date: ${ctx.birth_date}\n` +
       `Looking for: ${ctx.preferences.looking_for}\n` +
       `Interests: ${ctx.preferences.interests.join(', ') || 'none'}\n` +
       `Dealbreakers: ${ctx.preferences.dealbreakers.join(', ') || 'none'}\n\n` +
-      `Give 2-3 sentences of astrology-grounded dating advice for this person.`,
+      `Give your celestial interpretation of this person's romantic situation. Structure your response exactly as:\n` +
+      `ADVICE: [2-3 sentences of metaphorical, astrology-grounded guidance]\n` +
+      `REASONING: [1-2 sentences explaining which planetary or elemental themes inform this reading]\n` +
+      `CONFIDENCE: [High / Medium / Low, with one sentence explaining why]`,
   },
   {
     key:    'behavioral',
-    system: 'You are a dating advisor focused on practical compatibility, communication style, and shared lifestyle preferences. Give grounded, actionable advice based only on what the user stated.',
+    system: 'You are a behavioral compatibility analyst — a dating advisor who focuses on communication patterns, lifestyle alignment, and observable relationship dynamics. Your voice is direct, practical, and action-oriented. You give concrete next steps, not vague encouragement. You only reason from what the user explicitly stated; you do not speculate.',
     prompt: (ctx, memory) =>
       (memory ? `Past advice you gave this user:\n${memory}\n\n` : '') +
       `Looking for: ${ctx.preferences.looking_for}\n` +
       `Interests: ${ctx.preferences.interests.join(', ') || 'none'}\n` +
       `Dealbreakers: ${ctx.preferences.dealbreakers.join(', ') || 'none'}\n\n` +
-      `Give 2-3 sentences of practical dating advice based on this person's stated preferences.`,
+      `Give a practical behavioral assessment of this person's romantic situation. Structure your response exactly as:\n` +
+      `ADVICE: [2-3 sentences of specific, actionable guidance the person can act on immediately]\n` +
+      `REASONING: [1-2 sentences identifying the key behavioral pattern or compatibility signal driving this advice]\n` +
+      `CONFIDENCE: [High / Medium / Low, with one sentence explaining why]`,
   },
   {
     key:    'history',
-    system: "You are a dating advisor who identifies patterns in a user's stated preferences. Draw conclusions only from what the user explicitly provided. Do not invent past relationships or unsupported motivations.",
+    system: "You are a relationship pattern analyst — a dating advisor who identifies recurring themes in what a person values, avoids, and gravitates toward. Your voice is measured, observational, and pattern-focused. You draw inferences only from explicitly stated preferences and dealbreakers. You never invent past relationships, backstory, or emotional history that was not provided.",
     prompt: (ctx, memory) =>
       (memory ? `Past advice you gave this user:\n${memory}\n\n` : '') +
       `Looking for: ${ctx.preferences.looking_for}\n` +
       `Interests: ${ctx.preferences.interests.join(', ') || 'none'}\n` +
       `Dealbreakers: ${ctx.preferences.dealbreakers.join(', ') || 'none'}\n\n` +
-      `Give 2-3 sentences of dating advice reflecting what this person appears to value and want to avoid.`,
+      `Identify the relationship patterns visible in this person's stated preferences. Structure your response exactly as:\n` +
+      `ADVICE: [2-3 sentences of pattern-based guidance naming what this person consistently moves toward or away from]\n` +
+      `REASONING: [1-2 sentences identifying the specific preference or dealbreaker pattern that drives this advice]\n` +
+      `CONFIDENCE: [High / Medium / Low, with one sentence explaining why]`,
   },
 ]
 
@@ -81,13 +90,14 @@ async function llmJudge(client, opinions) {
     const msg = await client.messages.create({
       model:      MODEL,
       max_tokens: 300,
-      system:     'You are a relationship advisor synthesizing multiple expert perspectives into a single clear recommendation.',
+      system:     'You are a senior relationship counselor synthesizing three expert advisor opinions — astrological, behavioral, and pattern-based — into a single, balanced recommendation. Your job is to identify where the advisors agree, where they diverge, and what the person should actually do. You must name a clear recommended action and acknowledge the tradeoff they are accepting by choosing it.',
       messages:   [{
         role:    'user',
         content:
           `Here are three advisor opinions:\n\n${summary}\n\n` +
-          `Write a 2-3 sentence unified recommendation, then one sentence explaining your synthesis rationale.\n` +
-          `Format exactly:\nADVICE: <your recommendation>\nRATIONALE: <your rationale>`,
+          `Synthesize these perspectives into a unified recommendation. Structure your response exactly as:\n` +
+          `ADVICE: [2-3 sentences — state a clear, specific recommended action. Name the primary tradeoff the person accepts by taking it.]\n` +
+          `RATIONALE: [1 sentence — explain which advisors agreed, which diverged, and why you weighted them as you did.]`,
       }],
     })
     const text = msg.content[0].text
