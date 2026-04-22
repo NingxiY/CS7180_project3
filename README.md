@@ -1,116 +1,210 @@
-# CS7180 Project 3 — AI Multi-Agent Dating Assistant
+# 🌌 Cosmic Council — Multi-Agent AI Decision System
 
-A multi-agent system where specialized AI agents each contribute a distinct analytical perspective (astrology, behavioral analysis, user history) to collaboratively generate dating advice. An LLM-as-judge layer evaluates and synthesizes agent outputs before presenting a final response.
+A production-style full-stack AI application that simulates a “council of advisors” to help users reason through complex personal decisions.
 
-**Course:** CS7180 — Northeastern University
-
----
-
-## Architecture Overview
-
-```
-User Request
-     │
-     ▼
-FastAPI Backend
-     │  UserContext
-     ▼
-Orchestrator (LangGraph)
-     ├──► AstrologyAgent  ──► AgentOpinion
-     ├──► BehavioralAgent ──► AgentOpinion
-     └──► HistoryAgent    ──► AgentOpinion
-                │
-                ▼ List[AgentOpinion]
-          LLM-as-Judge (Claude)
-                │
-                ▼
-          Final Advice Response
-```
-
-Each agent is stateless and independently callable. The orchestrator owns the conversation graph — agents never call each other. The judge scores every `AgentOpinion` on relevance, safety, and coherence before the final response is assembled.
+This project demonstrates modern AI engineering practices including multi-agent orchestration, persistent memory, test-driven development, and CI/CD integration.
 
 ---
 
-## Project Structure
+## 🚀 Live Demo
 
-```
-backend/
-  agents/
-    base.py              # BaseAgent abstract interface
-    schemas.py           # UserContext, AgentOpinion (Pydantic)
-    astrology_agent.py   # Reference agent implementation
-  tests/
-    agents/
-      test_astrology_agent.py
-docs/
-  PRD.md
-  ARCHITECTURE.md
-```
+👉 https://your-vercel-url.vercel.app
 
 ---
 
-## Tech Stack
+## 🧠 What This Project Does
 
-| Layer | Technology |
-|---|---|
-| Backend API | Python 3.11, FastAPI |
-| Agent Framework | LangGraph |
-| LLM Provider | OpenAI GPT-4o (agents), Anthropic Claude (judge) |
-| Frontend | React 18, TypeScript, Vite |
-| Database | PostgreSQL + Redis |
-| Testing | pytest, Vitest + React Testing Library |
+Users describe a situation, and three distinct AI advisors provide perspectives:
+
+* **Astrology Agent** — abstract, reflective, metaphor-driven
+* **Behavioral Agent** — practical, action-oriented advice
+* **History Agent** — pattern-based reasoning using past interactions
+
+A **Judge Agent** synthesizes these into a final recommendation with tradeoff analysis.
 
 ---
 
-## Getting Started
+## 🏗️ Architecture
 
-### Prerequisites
+### Frontend
 
-- Python 3.11+
-- Node.js 20+ (for frontend, once implemented)
+* Next.js (App Router)
+* Interactive UI with dynamic advisor cards
 
-### Backend setup
+### Backend (Serverless)
+
+* Next.js API Route (`/api/v1/advice`)
+* Parallel agent execution (`Promise.all`)
+* Structured synthesis layer
+
+### Authentication
+
+* Clerk (user sessions, protected API)
+
+### Database
+
+* Neon Postgres
+
+Stores:
+
+* user sessions
+* agent opinions
+* per-agent memory
+
+### Memory System
+
+Each agent maintains a rolling memory of past advice:
+
+* Last 3 decisions are retained
+* Injected into future prompts
+* Enables personalized reasoning over time
+
+---
+
+## 🤖 AI Design
+
+### Multi-Agent Pattern
+
+Each agent produces structured output:
+
+```
+ADVICE
+REASONING
+CONFIDENCE
+```
+
+### Synthesis (Judge)
+
+Produces:
+
+* Final recommendation
+* Rationale
+* Tradeoffs between alternatives
+
+---
+
+## 🧪 Testing Strategy
+
+### Unit Tests
+
+* Memory logic (rolling window behavior)
+
+### Integration Tests
+
+* `/api/v1/advice` route
+* Auth guard (401)
+* Response shape validation
+
+### E2E Tests (Playwright)
+
+* UI rendering
+* User interaction flow
+* Error handling
+
+---
+
+## 🔁 CI/CD Pipeline
+
+GitHub Actions pipeline includes:
+
+* Install dependencies
+* Build (`next build`)
+* Unit + integration tests (Vitest)
+* Coverage report
+* E2E tests (Playwright)
+* Security audit (`npm audit`)
+
+---
+
+## 🧩 Claude Code Integration
+
+### Skills
+
+* `/update-claude-md` — maintains project documentation
+
+### Hooks
+
+* Detect structural changes → suggest documentation updates
+* Detect code changes → suggest build/test validation
+
+### Agent Workflow
+
+* Prompt engineering for multi-agent reasoning
+* Controlled output structure
+* Safe fallback (stub mode)
+
+---
+
+## 📦 Tech Stack
+
+* Next.js
+* React
+* Clerk (Auth)
+* Neon Postgres
+* Vitest
+* Playwright
+* GitHub Actions
+
+---
+
+## ⚙️ Running Locally
 
 ```bash
-# Install dependencies (from project root)
-pip install -r backend/requirements-dev.txt
-
-# Copy and fill in environment variables
-cp .env.example .env
-```
-
-### Running tests
-
-```bash
-# All backend tests
-pytest backend/tests/
-
-# Single test class
-pytest backend/tests/agents/test_astrology_agent.py::TestAstrologyAgent
-
-# With coverage
-pytest backend/tests/ --cov=backend --cov-report=term-missing
-```
-
-### Linting and type checks
-
-```bash
-ruff check backend/
-mypy backend/
+cd frontend
+npm install
+npm run dev
 ```
 
 ---
 
-## Implementation Status
+## 🧪 Running Tests
 
-- [x] `BaseAgent` abstract interface
-- [x] `UserContext` and `AgentOpinion` schemas
-- [x] `AstrologyAgent` (stub — no live LLM call yet)
-- [ ] Settings / env loading (`pydantic-settings`)
-- [ ] FastAPI app and `/api/advice` endpoint
-- [ ] `BehavioralAgent`, `HistoryAgent`
-- [ ] Orchestrator (LangGraph `StateGraph`)
-- [ ] LLM-as-judge layer
-- [ ] PostgreSQL models
-- [ ] Frontend (React + TypeScript)
-- [ ] CI/CD (GitHub Actions)
+```bash
+npm test
+npm run test:coverage
+npm run test:e2e
+```
+
+---
+
+## 🔐 Environment Variables
+
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
+CLERK_SECRET_KEY=...
+DATABASE_URL=...
+ANTHROPIC_API_KEY=... (optional)
+```
+
+---
+
+## 🎯 Key Engineering Decisions
+
+* Next.js full-stack for simple deployment (Vercel)
+* Serverless API instead of separate backend
+* Lightweight DB layer (no ORM)
+* Rolling memory instead of embeddings
+* Stub mode fallback for reliability
+
+---
+
+## 📸 Demo Highlights
+
+* Multi-agent reasoning in real time
+* Persistent user memory
+* Structured AI outputs
+* Fully tested and CI-validated pipeline
+
+---
+
+## ✨ Future Improvements
+
+* Richer memory modeling (LLM summarization)
+* User history UI
+* More specialized agents
+
+---
+
+## 📄 License
+
+MIT
