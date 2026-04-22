@@ -1,4 +1,5 @@
 import sql from './db'
+import { buildRollingMemory } from './memoryUtils'
 
 // Returns the internal users.id for this Clerk user, creating the row if needed.
 export async function findOrCreateUser(clerkUserId) {
@@ -45,8 +46,7 @@ export async function saveSession(userId, rawInput, finalAdvice, rationale, opin
 
 // Upserts agent_memory with a rolling summary of the last 3 advice texts.
 export async function updateAgentMemory(userId, agentName, newAdvice, existingMemory) {
-  const past    = existingMemory ? existingMemory.split('\n').filter(Boolean) : []
-  const updated = [...past, newAdvice].slice(-3).join('\n')
+  const updated = buildRollingMemory(existingMemory, newAdvice)
 
   await sql`
     INSERT INTO agent_memory (user_id, agent_name, memory_summary, last_updated_at)
