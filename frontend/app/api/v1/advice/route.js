@@ -1,5 +1,12 @@
 import { auth } from '@clerk/nextjs/server'
 import Anthropic from '@anthropic-ai/sdk'
+import sql from '../../../lib/db'
+import {
+  findOrCreateUser,
+  getAgentMemories,
+  saveSession,
+  updateAgentMemory,
+} from '../../../lib/memory'
 
 const MODEL   = process.env.ANTHROPIC_MODEL   || 'claude-haiku-4-5-20251001'
 const API_KEY = process.env.ANTHROPIC_API_KEY || ''
@@ -14,7 +21,8 @@ const AGENTS = [
   {
     key:    'astrology',
     system: 'You are an astrology-based dating advisor.',
-    prompt: (ctx) =>
+    prompt: (ctx, memory) =>
+      (memory ? `Past advice you gave this user:\n${memory}\n\n` : '') +
       `User birth date: ${ctx.birth_date}\n` +
       `Looking for: ${ctx.preferences.looking_for}\n` +
       `Interests: ${ctx.preferences.interests.join(', ') || 'none'}\n` +
@@ -24,7 +32,8 @@ const AGENTS = [
   {
     key:    'behavioral',
     system: 'You are a dating advisor focused on practical compatibility, communication style, and shared lifestyle preferences. Give grounded, actionable advice based only on what the user stated.',
-    prompt: (ctx) =>
+    prompt: (ctx, memory) =>
+      (memory ? `Past advice you gave this user:\n${memory}\n\n` : '') +
       `Looking for: ${ctx.preferences.looking_for}\n` +
       `Interests: ${ctx.preferences.interests.join(', ') || 'none'}\n` +
       `Dealbreakers: ${ctx.preferences.dealbreakers.join(', ') || 'none'}\n\n` +
@@ -33,7 +42,8 @@ const AGENTS = [
   {
     key:    'history',
     system: "You are a dating advisor who identifies patterns in a user's stated preferences. Draw conclusions only from what the user explicitly provided. Do not invent past relationships or unsupported motivations.",
-    prompt: (ctx) =>
+    prompt: (ctx, memory) =>
+      (memory ? `Past advice you gave this user:\n${memory}\n\n` : '') +
       `Looking for: ${ctx.preferences.looking_for}\n` +
       `Interests: ${ctx.preferences.interests.join(', ') || 'none'}\n` +
       `Dealbreakers: ${ctx.preferences.dealbreakers.join(', ') || 'none'}\n\n` +
@@ -41,13 +51,13 @@ const AGENTS = [
   },
 ]
 
-async function callAgent(client, agent, ctx) {
+async function callAgent(client, agent, ctx, memory) {
   try {
     const msg = await client.messages.create({
-      model:     MODEL,
+      model:      MODEL,
       max_tokens: 256,
-      system:    agent.system,
-      messages:  [{ role: 'user', content: agent.prompt(ctx) }],
+      system:     agent.system,
+      messages:   [{ role: 'user', content: agent.prompt(ctx, memory) }],
     })
     return { agent_name: agent.key, advice: msg.content[0].text.trim(), source: 'llm' }
   } catch {
@@ -69,10 +79,10 @@ async function llmJudge(client, opinions) {
   const summary = opinions.map((op) => `${op.agent_name}: ${op.advice}`).join('\n\n')
   try {
     const msg = await client.messages.create({
-      model:     MODEL,
+      model:      MODEL,
       max_tokens: 300,
-      system:    'You are a relationship advisor synthesizing multiple expert perspectives into a single clear recommendation.',
-      messages:  [{
+      system:     'You are a relationship advisor synthesizing multiple expert perspectives into a single clear recommendation.',
+      messages:   [{
         role:    'user',
         content:
           `Here are three advisor opinions:\n\n${summary}\n\n` +
@@ -115,17 +125,48 @@ export async function POST(request) {
     },
   }
 
+  // ── Memory read ────────────────────────────────────────────────────────────
+  let dbUserId  = null
+  let memories  = {}
+  if (sql) {
+    try {
+      dbUserId = await findOrCreateUser(userId)
+      memories = await getAgentMemories(dbUserId)
+    } catch (err) {
+      console.error('[db] memory read failed:', err)
+    }
+  }
+
+  // ── Agent + judge ──────────────────────────────────────────────────────────
   let opinions, judged
 
   if (API_KEY) {
     const client = new Anthropic({ apiKey: API_KEY })
-    opinions = await Promise.all(AGENTS.map((a) => callAgent(client, a, ctx)))
-    judged   = await llmJudge(client, opinions)
+    opinions = await Promise.all(
+      AGENTS.map((a) => callAgent(client, a, ctx, memories[a.key]))
+    )
+    judged = await llmJudge(client, opinions)
   } else {
     opinions = AGENTS.map((a) => ({ agent_name: a.key, advice: STUBS[a.key], source: 'stub' }))
     judged   = stubJudge(opinions)
   }
 
+  // ── Memory write ───────────────────────────────────────────────────────────
+  if (sql && dbUserId !== null) {
+    const rawInput = ctx.preferences.interests.join(' ') || ctx.preferences.looking_for
+    try {
+      await saveSession(dbUserId, rawInput, judged.final_advice, judged.rationale, opinions)
+      await Promise.all(
+        opinions.map((op) =>
+          updateAgentMemory(dbUserId, op.agent_name, op.advice, memories[op.agent_name])
+        )
+      )
+    } catch (err) {
+      console.error('[db] memory write failed:', err)
+    }
+  }
+
+  // ── Response ───────────────────────────────────────────────────────────────
   const scores = opinions.map((op) => ({
     agent_name: op.agent_name,
     relevance:  0.85,
